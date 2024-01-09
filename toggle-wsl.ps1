@@ -1,4 +1,4 @@
-﻿# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: MIT
 # Copyright (C) 2021 Niccolò Betto
 
 <#  Toggle-WSL
@@ -9,6 +9,12 @@
     Source: https://github.com/lynxnb/toggle-wsl
 #>
 
+param(
+ [switch] $install
+)
+
+
+
 [String[]] $featureList = "Microsoft-Windows-Subsystem-Linux", "VirtualMachinePlatform", "Microsoft-Hyper-V-All", "HypervisorPlatform", "Containers-DisposableClientVM"
 [String] $savedStatePath = "$env:LOCALAPPDATA\toggle-wsl.json"
 [String] $startupPath = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\toggle-wsl.cmd"
@@ -16,6 +22,19 @@
 $host.UI.RawUI.WindowTitle = "Toggle-WSL"
 
 <# Class / Functions Definitions #>
+
+# Function to Install All Virtualization Features
+function Install-VirtualizationFeatures {
+    Write-Host "`nInstalling All Virtualization Features..."
+    foreach ($feature in $featureList) {
+        if (-not (GetfState($feature))) {
+            Write-Host "Installing $feature..."
+            Enable-WindowsOptionalFeature -Online -FeatureName $feature -NoRestart
+        }
+    }
+    Write-Host "All virtualization features installed."
+}
+
 
 function Elevate {
     if ($env:WT_SESSION) {
@@ -69,6 +88,13 @@ if(-not (Test-Administrator)) {
     Elevate
     exit 0
 }
+
+if ($install) {
+    Install-VirtualizationFeatures
+    Write-Host "`nDone! You may need to reboot your computer for changes to take effect."
+    exit 0
+}
+
 
 [IO.FileInfo] $file = $savedStatePath
 
